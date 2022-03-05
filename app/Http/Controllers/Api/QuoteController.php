@@ -6,54 +6,102 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\QuoteResource;
 use App\Models\Quote;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class QuoteController extends Controller
 {
-    /**
-     * Handle the incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function index()
     {
         $quote = Quote::with('category')->get();
-        return [
-            'message' => 'success',
-            'status' => 200,
+        $response = [
+            'message' => 'Quote retrieved successfully',
             'quotes' => QuoteResource::collection($quote)
         ];
+
+        return response()->json($response, Response::HTTP_OK);
     }
 
     public function show($uuid)
     {
-        $quote = Quote::where('uuid', $uuid)->with('category')->first();
-        return [
-            'message' => 'success',
-            'status' => 200,
-            'quote' => new QuoteResource($quote)
-        ];
+        $quote = Quote::findOrFail($uuid)->with('category')->first();
+
+        try {
+            if ($quote) {
+                $response = [
+                    'message' => 'Quote retrieved successfully',
+                    'quote' => new QuoteResource($quote)
+                ];
+
+                return response()->json($response, Response::HTTP_OK);
+            } else {
+                $response = [
+                    'message' => 'Quote not found'
+                ];
+
+                return response()->json($response, Response::HTTP_BAD_REQUEST);
+            }
+        } catch (\Exception $e) {
+            $response = [
+                'message' => 'Quote not found'
+            ];
+
+            return response()->json($response, Response::HTTP_NOT_FOUND);
+        }
     }
 
     public function random()
     {
         $quote = Quote::inRandomOrder()->with('category')->first();
-        return [
-            'message' => 'success',
-            'status' => 200,
-            'quote' => new QuoteResource($quote)
-        ];
+
+        try {
+            if ($quote) {
+                $response = [
+                    'message' => 'success',
+                    'quote' => new QuoteResource($quote)
+                ];
+
+                return response()->json($response, Response::HTTP_OK);
+            } else {
+                $response = [
+                    'message' => 'No quote found'
+                ];
+
+                return response()->json($response, Response::HTTP_NOT_FOUND);
+            }
+        } catch (\Throwable $th) {
+            $response = [
+                'message' => 'Something went wrong'
+            ];
+
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
-    // make method to get random quote of the day
     public function qod()
     {
         $quote = Quote::whereDate('created_at', Carbon::today())->with('category')->first();
-        return [
-            'message' => 'success',
-            'status' => 200,
-            'quote' => new QuoteResource($quote)
-        ];
+
+        try {
+            if ($quote) {
+                $response = [
+                    'message' => 'success',
+                    'quote' => new QuoteResource($quote)
+                ];
+
+                return response()->json($response, Response::HTTP_OK);
+            } else {
+                $response = [
+                    'message' => 'No quote of the day found',
+                ];
+
+                return response()->json($response, Response::HTTP_NOT_FOUND);
+            }
+        } catch (\Exception $e) {
+            $response = [
+                'message' => 'No quote of the day found',
+            ];
+
+            return response()->json($response, Response::HTTP_NOT_FOUND);
+        }
     }
 }

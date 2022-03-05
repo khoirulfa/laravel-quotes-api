@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\CategoryResource;
 use App\Models\Category;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\{DB, Validator};
 use Illuminate\Support\Str;
-use RealRashid\SweetAlert\Facades\Alert;
+use Symfony\Component\HttpFoundation\Response;
 
 class CategoryController extends Controller
 {
@@ -17,15 +18,13 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        $selected_category = false;
-        $categories = Category::orderBy('created_at', 'desc')->get();
+        $category = Category::latest()->get();
+        $response = [
+            'message' => 'Category retrieved successfully',
+            'categories' => CategoryResource::collection($category)
+        ];
 
-        return view('admin.category.index', compact('categories', 'selected_category'));
-    }
-
-    public function create()
-    {
-        return view('admin.category.create');
+        return response()->json($response, Response::HTTP_OK);
     }
 
     /**
@@ -44,27 +43,34 @@ class CategoryController extends Controller
         );
 
         if ($validator->fails()) {
-            Alert::error('Error', $validator->errors()->all());
-            return redirect()
-                ->back()
-                ->withInput($request->all())
-                ->withErrors($validator);
+            $response = [
+                'message' => 'Error',
+                'errors' => $validator->errors()->all()
+            ];
+
+            return response()->json($response, Response::HTTP_BAD_REQUEST);
         }
 
         try {
-            Category::create([
+            $category = Category::create([
                 'title' => $request->title,
                 'slug' => Str::slug($request->title)
             ]);
 
-            Alert::success('Success', 'Category Created Successfully');
+            $response = [
+                'message' => 'Category created successfully',
+                'category' => new CategoryResource($category)
+            ];
 
-            return redirect()->route('categories.index');
+            return response()->json($response, Response::HTTP_CREATED);
         } catch (\Throwable $th) {
-            return redirect()
-                ->back()
-                ->withInput($request->all())
-                ->withErrors($validator);
+            DB::rollBack();
+            $response = [
+                'message' => 'Error',
+                'errors' => $th->getMessage()
+            ];
+
+            return response()->json($response, Response::HTTP_BAD_REQUEST);
         }
     }
 
@@ -76,20 +82,12 @@ class CategoryController extends Controller
      */
     public function show(Category $category)
     {
-        //
-    }
+        $response = [
+            'message' => 'Category retrieved successfully',
+            'category' => new CategoryResource($category)
+        ];
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Category  $category
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Category $category)
-    {
-        return view('admin.category.edit', [
-            'category' => $category,
-        ]);
+        return response()->json($response, Response::HTTP_OK);
     }
 
     /**
@@ -109,11 +107,12 @@ class CategoryController extends Controller
         );
 
         if ($validator->fails()) {
-            Alert::error('Error', $validator->errors()->all());
-            return redirect()
-                ->back()
-                ->withInput($request->all())
-                ->withErrors($validator);
+            $response = [
+                'message' => 'Error',
+                'errors' => $validator->errors()->all()
+            ];
+
+            return response()->json($response, Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         try {
@@ -122,17 +121,20 @@ class CategoryController extends Controller
                 'slug' => Str::slug($request->title)
             ]);
 
-            Alert::success('Success', 'Category Created Successfully');
+            $response = [
+                'message' => 'Category updated successfully',
+                'category' => new CategoryResource($category)
+            ];
 
-            $selected_category = false;
-            $categories = Category::latest()->get();
-
-            return view('admin.category.index', compact('categories', 'selected_category'));
+            return response()->json($response, Response::HTTP_OK);
         } catch (\Throwable $th) {
-            return redirect()
-                ->back()
-                ->withInput($request->all())
-                ->withErrors($validator);
+            DB::rollBack();
+            $response = [
+                'message' => 'Error ' . $th->errorInfo,
+                'errors' => $th->getMessage()
+            ];
+
+            return response()->json($response, Response::HTTP_BAD_REQUEST);
         }
     }
 
@@ -146,11 +148,19 @@ class CategoryController extends Controller
     {
         try {
             $category->delete();
-            Alert::success('Success', 'Category has successfully deleted!');
-        } catch (\Throwable $th) {
-            Alert::error('Error', $th->getMessage());
-        }
+            $respose = [
+                'message' => 'Category deleted successfully'
+            ];
 
-        return redirect()->back();
+            return response()->json($respose, Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            $response = [
+                'message' => 'Error',
+                'errors' => $th->getMessage()
+            ];
+
+            return response()->json($response, Response::HTTP_BAD_REQUEST);
+        }
     }
 }

@@ -20,14 +20,12 @@ Route::get('/', function () {
 
 Auth::routes([
     'register' => false,
-    'reset' => false
+    'reset' => false,
+    'login' => false
 ]);
 
-Route::middleware(['auth'])->group(function () {
-    Route::get('/home', [HomeController::class, 'index'])->name('home');
-    Route::resource('/categories', CategoryController::class);
-    Route::resource('/quotes', QuoteController::class);
-
-    Route::get('/export/excel', [QuoteController::class, 'exportAsExcel'])->name('quotes.export.excel');
-    Route::get('/export/csv', [QuoteController::class, 'exportAsCsv'])->name('quotes.export.csv');
-});
+// Route::middleware(['auth'])->group(function () {
+//     Route::get('/home', [HomeController::class, 'index'])->name('home');
+//     Route::resource('/categories', CategoryController::class);
+//     Route::resource('/quotes', QuoteController::class);
+// });

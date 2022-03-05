@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\{QuoteController, CategoryController};
 
 /*
 |--------------------------------------------------------------------------
@@ -19,16 +20,18 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::prefix('v1')->group(function () {
-    // all quote
-    Route::get('quotes', [\App\Http\Controllers\API\QuoteController::class, 'index']);
+    Route::resources([
+        'category' => CategoryController::class,
+        'quote' => QuoteController::class
+    ]);
 
-    // quote by uuid
-    // Route::get('quote/{quote}', [\App\Http\Controllers\API\QuoteController::class, 'show']);
+    // // quote by uuid
+    // Route::get('quote/quote/{quote}', [\App\Http\Controllers\API\QuoteController::class, 'show']);
 
-    // random quote
-    Route::get('quote/random', [\App\Http\Controllers\API\QuoteController::class, 'random']);
+    // // random quote
+    // Route::get('quote/random', [\App\Http\Controllers\API\QuoteController::class, 'random']);
 
-    // quote of the day
-    Route::get('quote/today', [\App\Http\Controllers\API\QuoteController::class, 'qod']);
+    // // quote of the day
+    // Route::get('quote/today', [\App\Http\Controllers\API\QuoteController::class, 'qod']);
 });
 
